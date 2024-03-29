@@ -8,3 +8,95 @@ output:
 ---
 
 This is my JSC370 Final Project website.
+
+```{r echo=FALSE, message=F}
+library(tidyverse)
+library(plotly)
+library(widgetframe)
+library(tidytext)
+sb_locs <- read_csv("starbucks-locations.csv")
+
+sb_nutr <- read_csv("starbucks-menu-nutrition.csv")
+
+usa_pop <- read_csv("us_state_pop.csv")
+
+usa_states<-read_csv("states.csv")
+
+library(dplyr)
+
+sb_usa <- sb_locs |> 
+  filter(sb_locs$Country=="US")
+
+# Create counts of Starbucks stores by state
+sb_locs_state <- sb_usa |> 
+  group_by(`State/Province`) |> 
+  summarise(Store_Count = n())
+
+# Merge usa_pop with usa_states by state in usa_pop and State in usa_states
+merged_pop_states <- full_join(usa_pop, usa_states, by = c("state" = "State"))
+
+
+merged_pop_states <- merged_pop_states |>
+  rename(`State/Province` = Abbreviation )
+
+# Then perform the full join
+sb_locs_state <- full_join(sb_locs_state, merged_pop_states, by = "State/Province")
+```
+## Showcasing plots {.tabset}
+
+### Figure 1
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+# Extract top 10 words
+top_10_words <- sb_nutr %>%
+  unnest_tokens(output = word, input = Item) %>%
+  count(word, sort = TRUE) %>%
+  head(10) %>%
+  pull(word)
+
+# Filter items containing top 10 words
+sb_nutr_top_10 <- sb_nutr %>%
+  filter(any(sapply(top_10_words, grepl, Item, fixed = TRUE)))
+
+# Create scatterplot with plot_ly
+scatter_plot <- plot_ly(sb_nutr_top_10, x = ~Calories, y = ~`Carb. (g)`, color = ~Category, text = ~Item,
+                        hoverinfo = "text") %>%
+  add_markers() %>%
+  layout(title = "Scatterplot of Calories vs. Carbs for Items with Top 10 Words",
+         xaxis = list(title = "Calories"),
+         yaxis = list(title = "Carbs"),
+         hovermode = "compare")
+
+# Display the scatterplot
+scatter_plot
+```
+### Figure 2
+```{r warning=FALSE, echo=FALSE}
+library(plotly)
+library(tidyverse)
+
+# Extract top 10 words
+top_10_words <- sb_nutr %>%
+  unnest_tokens(output = word, input = Item) %>%
+  count(word, sort = TRUE) %>%
+  head(10) %>%
+  pull(word)
+
+# Filter items containing top 10 words
+sb_nutr_top_10 <- sb_nutr %>%
+  filter(any(sapply(top_10_words, grepl, Item, fixed = TRUE)))
+
+# Create 3D scatterplot with plot_ly
+scatter_3d <- plot_ly(sb_nutr_top_10, type = "scatter3d", mode = "markers",
+                      x = ~Calories, y = ~`Carb. (g)`, z = ~`Protein (g)`,
+                      color = ~Category, text = ~Item, hoverinfo = "text",
+                      marker = list(size = 5)) %>%
+  layout(title = "3D Scatterplot of Calories, Carbs, and Protein for Items with Top 10 Words",
+         scene = list(xaxis = list(title = "Calories"),
+                      yaxis = list(title = "Carbs"),
+                      zaxis = list(title = "Protein")))
+
+# Display the 3D scatterplot
+scatter_3d
+```
+{-}
+
