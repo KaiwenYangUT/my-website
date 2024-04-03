@@ -98,5 +98,4 @@ scatter_3d <- plot_ly(sb_nutr_top_10, type = "scatter3d", mode = "markers",
 # Display the 3D scatterplot
 scatter_3d
 ```
-{-}
 
